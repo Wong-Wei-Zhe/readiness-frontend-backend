@@ -130,4 +130,4 @@ dist
 .pnp.*
 
 # FirebaseConfig
-/client/src/configs
+#/client/src/configs

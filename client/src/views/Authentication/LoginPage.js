@@ -315,7 +315,7 @@ const LoginPage = () => {
             <a href="/signuppage" style={{ color: "#2666CF" }}>
               click here
             </a>
-            &nbsp;to sign up.
+            &nbsp;to sign up (Web 1).
           </p>
         </Box>
       </Box>
