@@ -1,1 +1,1 @@
-export const BACKEND_DOMAIN = "http://localhost:5000";
+export const BACKEND_DOMAIN = "http://18.140.198.84:8080/api/";
