@@ -20,7 +20,7 @@ const WatchListContext = ({ children }) => {
     //   .then((response) => {
     //     return response.data;
     //   });
-    dispatch({ type: "INITIALISE", payload: data });
+    //dispatch({ type: "INITIALISE", payload: data });
   };
   const watchListReducer = (state, action) => {
     if (action.type === "ADD_ITEM") {
