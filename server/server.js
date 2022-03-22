@@ -5,7 +5,6 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 
 const uri = process.env.MONGO_URI;
-console.log(uri);
 const app = express();
 
 // parse application/x-www-form-urlencoded
@@ -20,6 +19,8 @@ app.use((req, res, next) => {
     "http://ec2-18-140-198-84.ap-southeast-1.compute.amazonaws.com:8080",
     "http://18.141.161.10:8080",
     "http://ec2-18-141-161-10.ap-southeast-1.compute.amazonaws.com:8080",
+    "http://52.221.189.46:8080",
+    "http://ec2-52-221-189-46.ap-southeast-1.compute.amazonaws.com:8080",
   ];
   let origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
@@ -54,3 +55,5 @@ app.get("/test", (req, res) => {
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+module.exports = uri;

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import DetailsPage from "../../components/Details/card-details/card-details";
 import CardDetailsAdd from "../../components/Details/card-details/card-details-add";
 import DetailsStats from "../../components/Details/card-details/card-details-stats";
-// import DetailsStatsContent from "../../components/details-stats-content";
 import Container from "@mui/material/Box";
 import { useParams } from "react-router";
 import { markets } from "../../utils/utils";
@@ -11,25 +10,18 @@ import { useLocation } from "react-router-dom";
 import { getCryptoInfo, getCryptoStats } from "../../utils/web-scrape-crypto";
 import "./Details.css";
 import { LinearProgress } from "@material-ui/core";
-import { useNavigate, Outlet, Navigate } from "react-router-dom";
-
-// using client-web-scraper
-// import { getForexInfo } from "../../utils/backup/scrape-forex-info";
+import { Navigate } from "react-router-dom";
 
 function Details(props) {
   //  watchListInitializer();
-  console.log("spamming");
   const [instrumentInfo, setInstrumentInfo] = useState({});
   //instrumentInfo has two properties, stats and desc
-  const [currentPrice, setCurrentPrice] = useState("-");
-  const [priceChange, setPriceChange] = useState("-");
-  const [percentagePriceChange, setPercentagePriceChange] = useState("-");
   const [symbolError, setSymbolError] = useState("");
+  const [priceSummary, setPriceSummary] = useState(null);
 
   let { market, symbol } = useParams();
   if (!market) market = props.market;
   if (!symbol) symbol = props.symbol;
-  console.log(useLocation());
   const location = useLocation();
   const { state } = useLocation();
   let imageInput = null;
@@ -55,24 +47,23 @@ function Details(props) {
     symbol,
     market,
   };
-  const handleCurrentPrice = (price) => {
-    let previousPrice;
-    if (currentPrice) previousPrice = currentPrice;
-    setCurrentPrice(price);
-    if (previousPrice) {
-      setPriceChange(currentPrice - currentPrice);
-      setPercentagePriceChange((priceChange / previousPrice).toFixed(2) + "%");
-    }
-    setCurrentPrice(price);
-
-    console.log(
-      `c: ${currentPrice}, ch: ${priceChange}, %: ${percentagePriceChange}`
-    );
+  const handleCurrentPrice = (item) => {
+    setPriceSummary(item);
   };
 
   const handleInvalidSymbol = (error, market) => {
-    console.log("handling error ", error);
     setSymbolError(error);
+  };
+
+  const PriceChange = ({ change }) => {
+    let style;
+    if (change > 0.0) {
+      style = { color: "green" };
+    } else if (change < 0.0) {
+      style = { color: "red" };
+    } else style = { color: "black" };
+
+    return <div style={style}>{change}</div>;
   };
 
   // get forex information
@@ -83,15 +74,9 @@ function Details(props) {
       getFrxInfo(symbol).then((data) => {
         setInstrumentInfo(data);
       });
-
-      // getForexInfo(symbol.substr(0, 3), symbol.substring(3)).then((data) => {
-      //   setInstrumentInfo(data);
-      //   console.log(data);
-      // });
     } else {
       getCryptoInfo(nameInput.toLowerCase(), symbol.toLocaleLowerCase()).then(
         (data) => {
-          console.log("scrape data ", data);
           setInstrumentInfo((prev) => {
             return { ...prev, description: data.description };
           });
@@ -99,13 +84,13 @@ function Details(props) {
       );
 
       getCryptoStats(symbol.toUpperCase()).then((data) => {
-        console.log("stats data ", data);
         setInstrumentInfo((prev) => {
           return { ...prev, stats: data.stats };
         });
       });
     }
   }, []);
+
   if (symbolError.toLowerCase() === "invalidsymbol") {
     return (
       <Navigate
@@ -144,17 +129,24 @@ function Details(props) {
                 <row>
                   <div className="company-box">
                     <span className="currency-price" id="currency-price">
-                      {currentPrice}
+                      {priceSummary
+                        ? Number(priceSummary.current).toFixed(4)
+                        : " - "}
                     </span>
                     <span className="currency" id="currency">
-                      USD{" "}
+                      USD
                     </span>
                     <span
                       className="currency-volatality"
                       id="currency-volatality"
                     >
-                      {" "}
-                      0.24(0.14%)
+                      {priceSummary
+                        ? priceSummary.priceChange !== null && (
+                            <PriceChange
+                              change={priceSummary.priceChange.toFixed(4)}
+                            />
+                          )
+                        : " - "}
                     </span>
                   </div>
                 </row>
@@ -177,29 +169,22 @@ function Details(props) {
         </Container>
 
         <Container>
-          {market === markets.forex ? (
-            <DetailsStats
-              dataStats={instrumentInfo.stats}
-              dataDescription={instrumentInfo.description}
-              market="forex"
-            />
+          {Object.keys(instrumentInfo).length !== 0 ? (
+            market === markets.forex ? (
+              <DetailsStats
+                dataStats={instrumentInfo.stats}
+                dataDescription={instrumentInfo.description}
+                market="forex"
+              />
+            ) : (
+              <DetailsStats
+                dataStats={instrumentInfo.stats}
+                dataDescription={instrumentInfo.description}
+                market="crypto"
+              />
+            )
           ) : (
-            <DetailsStats
-              dataStats={instrumentInfo.stats}
-              dataDescription={instrumentInfo.description}
-              market="crypto"
-            />
-            // {Object.keys(instrumentInfo).length !== 0 ? (
-            //   market === markets.forex ? (
-            //     <DetailsStats
-            //       dataStats={instrumentInfo.stats}
-            //       dataDescription={instrumentInfo.description}
-            //     />
-            //   ) : (
-            //     "loading..."
-            //   )
-            // ) : (
-            //   <LinearProgress style={{ background: "gold" }} />
+            <LinearProgress style={{ background: "gold" }} />
           )}
         </Container>
       </div>

@@ -47,7 +47,6 @@ const UserContext = ({ children }) => {
     let isSubscribed = true;
 
     onAuthStateChanged(auth, (user) => {
-      console.log("auth state change");
       if (user) {
         setUser(user);
         setUserStatus(true);
@@ -63,12 +62,9 @@ const UserContext = ({ children }) => {
   useEffect(() => {
     let isSubscribed = true;
     async function rocketChatSSOTrigger() {
-      console.log("GET AUTH CONTEXT TRIGGER");
       if (user !== null && user.uid && username !== null) {
-        console.log("Getting Auth");
         const result = await rocketGetAuth();
         if (result === false) {
-          console.log("ResignIn RocketChat");
           const accountData = {
             username: username,
             email: user.email,
@@ -85,16 +81,14 @@ const UserContext = ({ children }) => {
 
   useEffect(() => {
     let isSubscribed = true;
-    console.log("User Context Firebase Username Update");
     if (user !== null && user.uid) {
       const profileStoreRef = doc(db, "userprofile", user.uid);
 
       var unsubscribe = onSnapshot(profileStoreRef, (userprofile) => {
         if (userprofile.exists()) {
-          console.log("USERNAME FOUND");
           setUsername(userprofile.data().username);
         } else {
-          console.log("Missing username");
+          console.log("");
         }
       });
 
@@ -105,22 +99,22 @@ const UserContext = ({ children }) => {
     return () => (isSubscribed = false);
   }, [user]);
 
-  useEffect(() => {
-    console.log("User Context Rocket Token Update");
-    console.log(userRocketChatToken);
-  }, [userRocketChatToken]);
+  // useEffect(() => {
+  //   console.log("User Context Rocket Token Update");
+  //   console.log(userRocketChatToken);
+  // }, [userRocketChatToken]);
 
-  useEffect(() => {
-    console.log("User Context Update");
-    if (user !== null && user.uid) {
-      console.log(user.uid);
-    }
-  }, [user]);
+  // useEffect(() => {
+  //   console.log("User Context Update");
+  //   if (user !== null && user.uid) {
+  //     console.log(user.uid);
+  //   }
+  // }, [user]);
 
-  useEffect(() => {
-    console.log("User Context Username Update");
-    console.log(username);
-  }, [username]);
+  // useEffect(() => {
+  //   console.log("User Context Username Update");
+  //   console.log(username);
+  // }, [username]);
 
   // const experimentdelete = () => {
   //   setUserRocketChatToken(null);

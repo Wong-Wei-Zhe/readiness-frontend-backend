@@ -40,7 +40,8 @@ const LoginPage = () => {
       let feature = "";
       if (from.includes("details")) {
         feature =
-          "details for " + from.replace(/\/details\/((forex)|(crypto))\//, "");
+          "details for " +
+          from.replace(/\/details\/((forex)|(crypto))\//, "").toUpperCase();
       } else if (from.includes("favourite")) {
         feature = "watch list";
       }
@@ -177,9 +178,9 @@ const LoginPage = () => {
             variant="h4"
             // component="div"
             sx={{
-              fontFamily: " League Spartan",
+              fontFamily: " League Spartan !important",
               color: "black",
-              fontWeight: "bold",
+              fontWeight: "bold !important",
             }}
           >
             It's TREX.

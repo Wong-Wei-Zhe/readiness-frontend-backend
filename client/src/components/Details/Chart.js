@@ -8,7 +8,6 @@ import {
   isCurrentTickTimeGroupSame,
   updateLastOHLC,
   createOHLC,
-  markets,
 } from "../../utils/utils";
 
 import {
@@ -62,15 +61,12 @@ class ChartComponent extends React.Component {
   // accepts props: symbol
   componentDidMount() {
     if (this.props.market === "forex") {
-      // 58-68 (microservice) other all still client
       // getting historical forex data and starting a server sent event connection to get ticks - complete
       getForexOHLCHistorical(
         this.props.symbol,
         "candles",
         this.state.interval.name
       ).then((data) => {
-        console.log("data received: ", data);
-
         if (data.error) {
           // this.setState({ error: data.error });
           this.props.handleSymbol(data.error, "forex");
@@ -88,10 +84,8 @@ class ChartComponent extends React.Component {
           tickConnection.connection.onmessage = (msg) => {
             let newTick = JSON.parse(msg.data);
             // let newTick = JSON.parse(JSON.parse(msg.data));
-            console.log("newtick msg ", newTick);
 
             if (newTick.error) {
-              console.log("receives error ", newTick.error);
               this.setState({ error: newTick.error });
               tickConnection.connection.close();
             } else {
@@ -99,7 +93,12 @@ class ChartComponent extends React.Component {
               newTick.date = new Date(newTick.date);
 
               // send current price to parent component (details) to display
-              this.props.getCurrentPrice(newTick.price);
+              this.props.getCurrentPrice(
+                this.generatePriceSummary(
+                  newTick.price,
+                  this.state.data[data.length - 1].close
+                )
+              );
 
               // check if new tick belongs to the same time group of last OHLC
               let sameTimeGroup = isCurrentTickTimeGroupSame(
@@ -127,9 +126,7 @@ class ChartComponent extends React.Component {
       // get historical data
       getCryptoOHLCHistorical(this.props.symbol, this.state.interval.name).then(
         (data) => {
-          console.log("get crypto data ", data);
           if (data.error) {
-            console.log("received error mesg");
             this.props.handleSymbol(data.error, "crypto");
           } else {
             data = data.data;
@@ -141,13 +138,17 @@ class ChartComponent extends React.Component {
 
             tickConnection = new CryptoTickConnection(this.props.symbol);
             tickConnection.connection.onmessage = (msg) => {
-              console.log("new tick ", msg);
               let newTick = JSON.parse(msg.data);
               let lastOHLC = this.state.data[this.state.data.length - 1];
               newTick.date = new Date(newTick.date);
 
               // send current price to parent component (details) to display
-              this.props.getCurrentPrice(newTick.price);
+              this.props.getCurrentPrice(
+                this.generatePriceSummary(
+                  newTick.price,
+                  this.state.data[data.length - 1].close
+                )
+              );
 
               // check if new tick belongs to the same time group of last OHLC
               let sameTimeGroup = isCurrentTickTimeGroupSame(
@@ -176,8 +177,21 @@ class ChartComponent extends React.Component {
   componentWillUnmount = () => {
     if (tickConnection !== null) {
       tickConnection.connection.close();
-      console.log("unmounting");
     }
+  };
+
+  // get price summary
+  generatePriceSummary = (currPrice, prevPrice) => {
+    let currentPrice = currPrice;
+    let previousPrice = prevPrice;
+    let priceChange = previousPrice ? currentPrice - previousPrice : null;
+
+    let priceSummary = {
+      current: currentPrice.toFixed(4),
+      priceChange: priceChange,
+    };
+
+    return priceSummary;
   };
 
   // change ohlc chart interval
@@ -195,6 +209,7 @@ class ChartComponent extends React.Component {
 
       getForexOHLCHistorical(this.props.symbol, styleQuery, intervalQuery).then(
         (data) => {
+          data = data.data;
           data = data.map((item) => {
             item.date = new Date(item.date);
             return item;
@@ -204,6 +219,8 @@ class ChartComponent extends React.Component {
       );
     } else {
       getCryptoOHLCHistorical(this.props.symbol, interval.name).then((data) => {
+        data = data.data;
+
         data = data.map((item) => {
           item.date = new Date(item.date);
           return item;
@@ -227,6 +244,8 @@ class ChartComponent extends React.Component {
           "candles",
           candleIntervals.one_minute.name
         ).then((data) => {
+          data = data.data;
+
           data = data.map((item) => {
             item.date = new Date(item.date);
             return item;
@@ -257,6 +276,51 @@ class ChartComponent extends React.Component {
     });
   };
 
+  // get data on load more
+  getMoreData = () => {
+    let lastTime = this.state.data[0].date.getTime() / 1000;
+
+    if (this.props.market === "forex") {
+      getForexOHLCHistorical(
+        this.props.symbol,
+        this.state.chart === charts.candle_stick ? "candles" : "ticks",
+        this.state.interval.name,
+        lastTime
+      ).then((data) => {
+        data = data.data;
+        data = data.map((item) => {
+          item.date = new Date(item.date);
+          return item;
+        });
+        if (
+          data[data.length - 1].date.getTime() ===
+          this.state.data[0].date.getTime()
+        )
+          data.pop();
+        this.setState({ data: data.concat(this.state.data) });
+      });
+    } else {
+      getCryptoOHLCHistorical(
+        this.props.symbol,
+        this.state.interval.name,
+        lastTime
+      ).then((data) => {
+        data = data.data;
+        data = data.map((item) => {
+          item.date = new Date(item.date);
+          return item;
+        });
+        if (
+          data[data.length - 1].date.getTime() ===
+          this.state.data[0].date.getTime()
+        )
+          data.pop();
+
+        this.setState({ data: data.concat(this.state.data) });
+      });
+    }
+  };
+
   render() {
     // change interval options depending on market and chart type
     let intervalOptions = { ...candleIntervals };
@@ -277,11 +341,7 @@ class ChartComponent extends React.Component {
             alignItems: "center",
           }}
         >
-          <CircularProgress
-            style={{ color: "#184d47" }}
-            size="100px"
-            thickness="2"
-          />
+          <CircularProgress style={{ color: "#184d47" }} size="100px" />
         </div>
       );
     }
@@ -293,6 +353,7 @@ class ChartComponent extends React.Component {
             type="hybrid"
             data={this.state.data}
             indicators={this.state.indicators}
+            onLoadMore={this.getMoreData}
           />
         )}
         {this.state.chart === charts.line_graph && (
@@ -300,6 +361,7 @@ class ChartComponent extends React.Component {
             type="hybrid"
             data={this.state.data}
             indicators={this.state.indicators}
+            onLoadMore={this.getMoreData}
           />
         )}
         <div>
