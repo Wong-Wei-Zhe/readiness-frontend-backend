@@ -21,6 +21,7 @@ app.use((req, res, next) => {
     "http://ec2-18-141-161-10.ap-southeast-1.compute.amazonaws.com:8080",
     "http://52.221.189.46:8080",
     "http://ec2-52-221-189-46.ap-southeast-1.compute.amazonaws.com:8080",
+    "http://167.172.70.151:8080",
   ];
   let origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
